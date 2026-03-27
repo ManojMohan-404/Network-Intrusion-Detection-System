@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIDS | Network Intrusion Detection System</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <!-- Professional & Scaled Sidebar Header -->
+        <div class="sidebar-header" style="text-align: center; padding: 40px 15px 30px 15px; border-bottom: 1px solid #1f2937; background: #0b1120;">
+            <h2 style="font-size: 2.6rem; margin: 0 0 12px 0; color: #ffffff; font-weight: 900; letter-spacing: 2px;">
+                <i class="fa-solid fa-shield-halved" style="color: #3b82f6; text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);"></i> NIDS
+            </h2>
+            <p style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 3px; margin: 0; font-weight: 700; line-height: 1.6;">
+                <span style="color: #e5e7eb;">Network Intrusion</span><br>
+                <span style="color: #3b82f6;">Detection System</span>
+            </p>
+        </div>
+        <ul class="nav-links">
+            <li class="active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="switchTab('network', this)"><i class="fa-solid fa-network-wired"></i> Network Map</li>
+            <li onclick="switchTab('threats', this)"><i class="fa-solid fa-triangle-exclamation"></i> Threat Intel</li>
+            <li onclick="switchTab('reports', this)"><i class="fa-solid fa-file-export"></i> Reports</li>
+            <li onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search IPs, Protocols, or Alerts..." onkeyup="filterLogs()">
+            </div>
+            <div class="user-info">
+                <span class="status-indicator live"></span> Live Monitoring
+                <button class="btn-export" onclick="exportToCSV()"><i class="fa-solid fa-download"></i> Export CSV</button>
+            </div>
+        </header>
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="view-panel active">
+            <section class="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue"><i class="fa-solid fa-server"></i></div>
+                    <div class="kpi-data">
+                        <p>Total Packets Captured</p>
+                        <h3 id="kpi-total">0</h3>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon red"><i class="fa-solid fa-skull-crossbones"></i></div>
+                    <div class="kpi-data">
+                        <p>Active Threats</p>
+                        <h3 id="kpi-threats">0</h3>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orange"><i class="fa-solid fa-door-open"></i></div>
+                    <div class="kpi-data">
+                        <p>Port Scans</p>
+                        <h3 id="kpi-scans">0</h3>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon green"><i class="fa-solid fa-check-circle"></i></div>
+                    <div class="kpi-data">
+                        <p>System Status</p>
+                        <h3>Secure</h3>
+                    </div>
+                </div>
+            </section>
+
+            <section class="charts-row">
+                <div class="chart-container">
+                    <h3>Protocol Distribution</h3>
+                    <canvas id="protocolChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Threat Frequency</h3>
+                    <canvas id="threatChart"></canvas>
+                </div>
+            </section>
+
+            <section class="table-container">
+                <h3>Live Network Traffic</h3>
+                <div class="table-wrapper">
+                    <table id="logTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Protocol</th>
+                                <th>Source IP</th>
+                                <th>Destination IP</th>
+                                <th>App / Payload</th>
+                                <th>Status/Alert</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW: NETWORK MAP -->
+        <div id="view-network" class="view-panel">
+            <div class="placeholder-card">
+                <h2><i class="fa-solid fa-network-wired" style="font-size: 3rem; color: #3b82f6; margin-bottom: 15px;"></i></h2>
+                <h2>Network Topology Map</h2>
+                <p style="color: #9ca3af; margin-top: 10px;">Visual node mapping engine is initializing. Capture more data to build the graph.</p>
+                <div class="unique-ips-container" style="margin-top: 30px; text-align: left;">
+                    <h3>Unique IPs Detected in Session:</h3>
+                    <ul id="unique-ips-list" style="color: #10b981; list-style: none; margin-top: 10px; line-height: 1.8;">
+                        <li>Waiting for traffic...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: THREAT INTEL -->
+        <div id="view-threats" class="view-panel">
+            <div class="placeholder-card" style="text-align: left;">
+                <h2 style="color: #ef4444; border-bottom: 1px solid #1f2937; padding-bottom: 10px; margin-bottom: 20px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Threat Intelligence
+                </h2>
+                <p>Lookup any IP against our threat database to check for malicious activity, geographic location, and ISP details.</p>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <input type="text" id="manualIpLookup" placeholder="Enter IP Address (e.g., 8.8.8.8)" style="padding: 10px; border-radius: 6px; border: 1px solid #1f2937; background: #0b1120; color: white; width: 300px;">
+                    <button class="btn-export" onclick="window.open('/ip/' + document.getElementById('manualIpLookup').value, '_blank')">Lookup IP</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: REPORTS -->
+        <div id="view-reports" class="view-panel">
+            <div class="placeholder-card">
+                <h2><i class="fa-solid fa-file-csv" style="font-size: 3rem; color: #10b981; margin-bottom: 15px;"></i></h2>
+                <h2>Generate SOC Report</h2>
+                <p style="color: #9ca3af; margin-top: 10px; margin-bottom: 20px;">Download a complete CSV of the current database for SIEM ingestion or forensic analysis.</p>
+                <button class="btn-export" onclick="exportToCSV()" style="font-size: 1.1rem; padding: 12px 24px;">Download Full CSV</button>
+            </div>
+        </div>
+
+        <!-- VIEW: SETTINGS -->
+        <div id="view-settings" class="view-panel">
+            <div class="placeholder-card" style="text-align: left;">
+                <h2 style="border-bottom: 1px solid #1f2937; padding-bottom: 10px; margin-bottom: 20px;">
+                    <i class="fa-solid fa-gear"></i> System Settings
+                </h2>
+                
+                <div class="setting-row" style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span><strong>Auto-Refresh Dashboard</strong><br><small style="color: #9ca3af;">Refresh logs every 3 seconds</small></span>
+                    <input type="checkbox" checked id="toggleRefresh" onchange="toggleAutoRefresh()" style="width: 20px; height: 20px;">
+                </div>
+                
+                <div class="setting-row" style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span><strong>Promiscuous Mode</strong><br><small style="color: #9ca3af;">Capture packets meant for other devices</small></span>
+                    <input type="checkbox" checked disabled style="width: 20px; height: 20px;">
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>

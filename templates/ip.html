@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Entity Investigation | {{ ip }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b1120; --panel-bg: #111827; --border: #1f2937;
+            --text-main: #f3f4f6; --text-muted: #9ca3af;
+            --primary: #3b82f6; --danger: #ef4444; --warning: #f59e0b; --success: #10b981;
+        }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { width: 95%; max-width: 1800px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 1.8rem; display: flex; align-items: center; gap: 15px; }
+        
+        .badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; border: 1px solid transparent; }
+        .badge.Low { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: var(--success); }
+        .badge.Medium { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: var(--warning); }
+        .badge.High { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 25px; }
+        .card h3 { margin-top: 0; color: var(--text-muted); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 1rem; }
+        .data-label { color: var(--text-muted); }
+        .data-value { font-weight: 600; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
+        th { background: #1f2937; padding: 12px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .alert-text { color: var(--danger); font-weight: bold; }
+        .normal-text { color: var(--success); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1><i class="fa-solid fa-microscope" style="color: var(--primary);"></i> Entity Profile: {{ ip }}</h1>
+        <div>
+            <span class="badge {{ risk_level }}">Risk Level: {{ risk_level }} ({{ score }}/100)</span>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3><i class="fa-solid fa-globe"></i> Global Threat Intel (OSINT)</h3>
+            <div class="data-row">
+                <span class="data-label">Asset Type</span>
+                <span class="data-value">{{ status }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Geolocation</span>
+                <span class="data-value">{{ country }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">ISP / Organization</span>
+                <span class="data-value">{{ isp }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Abuse Confidence</span>
+                <span class="data-value">{{ score }}%</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-network-wired"></i> Local Network Context</h3>
+            <div class="data-row">
+                <span class="data-label">Recent Packets Exchanged</span>
+                <span class="data-value">{{ total_packets }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Security Alerts Triggered</span>
+                <span class="data-value {% if alerts > 0 %}alert-text{% endif %}">{{ alerts }}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">First Seen</span>
+                <span class="data-value">{% if logs %}{{ logs[-1][1][:19] }}{% else %}N/A{% endif %}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Last Seen</span>
+                <span class="data-value">{% if logs %}{{ logs[0][1][:19] }}{% else %}N/A{% endif %}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="overflow-x: auto;">
+        <h3><i class="fa-solid fa-list"></i> Recent Telemetry Logs for {{ ip }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Protocol</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Bytes</th>
+                    <th>App / Payload</th>
+                    <th>Alert Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="color: var(--text-muted);">{{ log[1][11:19] }}</td>
+                    <td style="color: var(--primary); font-weight: bold;">{{ log[4] }}</td>
+                    <td>{{ log[2] }}</td>
+                    <td>{{ log[3] }}</td>
+                    <td>{{ log[5] }}</td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 400px; word-wrap: break-word; white-space: pre-wrap;">{{ log[7] }}</td>
+                    <td class="{% if log[6] != 'Normal' %}alert-text{% else %}normal-text{% endif %}">{{ log[6] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted);">No recent traffic logs found for this IP.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Dynamic auto-refresh script -->
+<script>
+    function fetchUpdates() {
+        // Silently fetch the current IP page in the background
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                // Convert the raw HTML text into a readable Document Object
+                let parser = new DOMParser();
+                let newDoc = parser.parseFromString(html, 'text/html');
+                
+                // 1. Hot-swap the Telemetry Logs Table
+                let currentTableBody = document.querySelector('tbody');
+                let newTableBody = newDoc.querySelector('tbody');
+                if (currentTableBody && newTableBody) {
+                    currentTableBody.innerHTML = newTableBody.innerHTML;
+                }
+
+                // 2. Hot-swap the Context Cards (Updates "Recent Packets", "Last Seen", etc.)
+                let currentGrid = document.querySelector('.grid');
+                let newGrid = newDoc.querySelector('.grid');
+                if (currentGrid && newGrid) {
+                    currentGrid.innerHTML = newGrid.innerHTML;
+                }
+            })
+            .catch(err => console.error("Error fetching updates:", err));
+    }
+
+    // Run this function every 3 seconds to match the main dashboard
+    setInterval(fetchUpdates, 3000);
+</script>
+
+</body>
+</html>
